@@ -1,0 +1,49 @@
+class Solution:
+    def sortItems(self, n: int, m: int, group: List[int], beforeItems: List[List[int]]) -> List[int]:
+        def assign_unique_group_ids():
+            new_group_id = m
+            for i in range(n):
+                if group[i] == -1:
+                    group[i] = new_group_id
+                    new_group_id += 1
+            return new_group_id
+        def build_dependency_graphs_and_indegrees(new_group_id):
+            item_dependency_graph = defaultdict(list)
+            group_dependency_graph = defaultdict(list)
+            item_indegree = [0] * 
+            group_indegree = [0] * new_group_id
+            for i in range(n):
+                for prereq in beforeItems[i]:
+                    item_dependency_graph[prereq].append(i)
+                    item_indegree[i] += 1
+                    if group[prereq] != group[i]:
+                        group_dependency_graph[group[prereq]].append(group[i])
+                        group_indegree[group[i]] += 1
+            return item_dependency_graph, group_dependency_graph, item_indegree, group_indegree
+        def perform_topological_sort(graph, indegree):
+            sorted_order = []
+            sources = deque()
+            for i in range(len(indegree)):
+                if indegree[i] == 0:
+                    sources.append(i)
+            while sources:
+                current = sources.popleft()
+                sorted_order.append(current)
+                for neighbor in graph[current]:
+                    indegree[neighbor] -= 1
+                    if indegree[neighbor] == 0:
+                        sources.append(neighbor)
+            return sorted_order if len(sorted_order) == len(indegree) else []
+        new_group_id = assign_unique_group_ids()
+        item_dependency_graph, group_dependency_graph, item_indegree, group_indegree = build_dependency_graphs_and_indegrees(new_group_id)
+        item_sorted_order = perform_topological_sort(item_dependency_graph, item_indegree)
+        group_sorted_order = perform_topological_sort(group_dependency_graph, group_indegree)
+        if not item_sorted_order or not group_sorted_order:
+            return []
+        ordered_items_by_group = defaultdict(list)
+        for item in item_sorted_order:
+            ordered_items_by_group[group[item]].append(item)
+        final_order = []
+        for group_index in group_sorted_order:
+            final_order.extend(ordered_items_by_group[group_index])
+        return final_order
